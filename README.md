@@ -5,6 +5,8 @@ A C++ Renderer
 Visual Studio 2010(or higher) Console Application Project
 
 # Reference
+http://www.raytracegroundup.com
+
 https://pbrt.org
 
 http://graphics.stanford.edu/papers/veach_thesis/
