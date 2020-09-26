@@ -1,0 +1,63 @@
+	_n_objects = 8;
+	_objects = new Shape *[_n_objects];
+
+	_n_lights = 1;
+	_lights = new Light *[_n_lights];
+
+	_n_samples = 1;
+	_image = new Film(1200, 1000, 4, _n_samples, 1.0f);
+
+	//Mat4x4 camera_transform = RotationZ(PI * 0.05f) * RotationX(-PI * 0.15f) * RotationY(-PI * 0.86f);
+	//_camera = new Pinhole(Point3(5.0f, 5.5f, 10.5f), camera_transform, 1.0f / _image->AspectRatio());
+	Mat4x4 camera_transform = RotationX(0.0f) * RotationY(PI) * RotationZ(0.0f);
+	_camera = new Pinhole(Point3(0.0f, 1.5f, 20.2f), camera_transform, 1.0f / _image->AspectRatio());
+	//_camera->DepthOfField(23.2f, 0.5f);
+
+	_objects[0] = new Rect(Point3(-3.0f, -1.0f, 3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -6.0f));
+	_objects[0]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[0]->AddingTexture(new Checker(12.0f, 12.0f, Color(0.85f, 0.85f, 0.85f), Color(1.0f, 1.0f, 1.0f)));
+
+	_objects[1] = new Rect(Point3(3.0f, -1.0f, -3.0f), Vector3(0.0f, 0.0f, 6.0f), Vector3(0.0f, 5.0f, 0.0f));
+	_objects[1]->AddingMaterial(new Matte(0.75f, Color(0.1f, 0.9f, 0.1f)));
+	_objects[2] = new Rect(Point3(-3.0f, -1.0f, 3.0f), Vector3(0.0f, 0.0f, -6.0f), Vector3(0.0f, 5.0f, 0.0f));
+	_objects[2]->AddingMaterial(new Matte(0.75f, Color(0.9f, 0.1f, 0.1f)));
+	_objects[3] = new Rect(Point3(-3.0f, 4.0f, -3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 6.0f));
+	_objects[3]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[4] = new Rect(Point3(-3.0f, -1.0f, -3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 5.0f, 0.0f));
+	_objects[4]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+
+	_objects[5] = new Sphere(Point3(-1.5f, 0.0f, -1.5f), 1.0f);
+	_objects[5]->AddingMaterial(new Specular(0.95f, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[5]->AddingMaterial(new Matte(0.7f, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[5]->_transform = RotationY(-PI / 2.0f);
+	//_objects[5]->AddingTexture(new ImageTexture("Scene\\Texture\\earth.bmp"));
+
+	_objects[6] = new Sphere(Point3(1.5f, 0.0f, 1.5f), 1.0f);
+	_objects[6]->AddingMaterial(new Dielectric(1.5f, 1.00029f, Color(0.001f, 0.001f, 0.001f)));
+	//_objects[6]->_transform = RotationX(-PI / 4.0f) * RotationY(-PI / 6.0f);
+	//_objects[6]->AddingTexture(new Checker(48.0f, 0.0f, Color(0.5f), Color(1.0f)));
+
+	//Mat4x4 teapot_transform = Translation(-1.45f, 0.0f, -0.5f) * RotationY(PI * 1.296f) * Translation(1.0f, -0.99f, 0.0f) * Scaling(1.1f, 1.1f, 1.1f);
+	//_objects[5] = new Model("Scene\\Model\\teapot.obj", teapot_transform);
+	//_objects[5]->AddingMaterial(new Glossy(0.0f, 0.9f, 10, Color(1.0f, 1.0f, 1.0f)));
+
+	//Mat4x4 cube_transform = Translation(1.5f, -0.399f, 1.5f) * RotationY(PI / 20.0f) * Scaling(0.6f, 0.6f, 0.6f);
+	//_objects[6] = new Model("Scene\\Model\\cube.obj", cube_transform);
+	//_objects[6]->AddingMaterial(new Dielectric(1.5f, 1.00029f, Color(0.001f, 0.001f, 0.001f)));
+
+	//_objects[7] = new Rect(Point3(-1.0f, 3.5f, 1.0f), Vector3(2.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -2.0f), _n_samples);
+	_objects[7] = new Rect(Point3(-1.0f, 3.9f, -1.0f), Vector3(2.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 2.0f), _n_samples);
+	_objects[7]->AddingMaterial(new Emissive(18.0f, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[7] = new Sphere(Point3(0.0f, 3.7f, 0.0f), 0.25f, 1024);
+	//_objects[7]->AddingMaterial(new Emissive(125.0f, Color(1.0f, 1.0f, 1.0f));
+	_objects[7]->GenerateSamples();
+
+	_lights[0] = new AreaLight(_objects[7], _objects[7]->MaterialPtr());
+
+	//_volume_ptr = new HomogeneousVolume(BBox(Point3(-3.0f, -1.0f, -3.0f), Point3(3.0f, 4.0f, 3.0f)), 0.0018f, 0.0f);
+
+	_bvh_ptr = new BVHAccel(_objects, _n_objects);
+
+	//_tracer_ptr = new RayTracer(this, 10);
+	_tracer_ptr = new PathTracer(this, 15);
+	//_tracer_ptr = new BidirectionalPathTracer(this, 15, 15);

@@ -1,0 +1,48 @@
+	_n_objects = 7;
+	_objects = new Shape *[_n_objects];
+
+	_n_lights = 1;
+	_lights = new Light *[_n_lights];
+
+	_n_samples = 1;
+	_image = new Film(1200, 1000, 4, _n_samples);
+
+	Mat4x4 camera_transform = RotationZ(0.0f) * RotationX(0.0f) * RotationY(PI);
+	_camera = new Pinhole(Point3(0.0f, 1.5f, 20.2f), camera_transform, 1.0f / _image->AspectRatio());
+
+	_objects[0] = new Rect(Point3(-3.0f, -1.0f, 3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -6.0f));
+	_objects[0]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[1] = new Rect(Point3(3.0f, -1.0f, -3.0f), Vector3(0.0f, 0.0f, 6.0f), Vector3(0.0f, 5.0f, 0.0f));
+	_objects[1]->AddingMaterial(new Matte(0.75f, Color(0.1f, 0.9f, 0.1f)));
+	_objects[2] = new Rect(Point3(-3.0f, -1.0f, 3.0f), Vector3(0.0f, 0.0f, -6.0f), Vector3(0.0f, 5.0f, 0.0f));
+	_objects[2]->AddingMaterial(new Matte(0.75f, Color(0.9f, 0.1f, 0.1f)));
+	_objects[3] = new Rect(Point3(-3.0f, 4.0f, -3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 6.0f));
+	_objects[3]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[4] = new Rect(Point3(-3.0f, -1.0f, -3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 5.0f, 0.0f));
+	_objects[4]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+
+	Mat4x4 transform = RotationX(0.0f) * Translation(0.0f, -0.99f, 0.0f) * Scaling(0.3f, 0.3f, 0.3f);
+	_objects[5] = new Model("Scene\\Model\\dragon.obj", transform);
+	_objects[5]->AddingMaterial(new Dielectric(1.5f, 1.00029f, Color(0.05f, 0.25f, 1.0f)));
+	//_objects[5]->AddingMaterial(new Subsurface(1.61f, 1.00029f, Color(1.5f, 1.5f, 1.5f), Color(0.1f, 0.07f, 0.2f), 6.0f));
+
+	//Mat4x4 transform = RotationY(0.0f) * Translation(0.0f, -0.99f, 0.0f) * Scaling(0.65f, 0.65f, 0.65f);
+	//_objects[5] = new Model("Scene\\Model\\teapot.obj", transform);
+	//_objects[5]->AddingMaterial(new Dielectric(1.5f, 1.00029f, Color(0.01f)));
+
+	//Mat4x4 t_transform = RotationX(0.0f) * Translation(0.3f, -1.03f, 0.0f) * Scaling(1.9f, 1.9f, 1.9f);
+	//_objects[5] = new Model("Scene\\Model\\bunny.obj", t_transform);
+	//_objects[5]->AddingMaterial(new Dielectric(1.5f, 1.00029f, Color(0.137f, 0.364f, 0.4131f) * 3.5f));
+
+	_objects[6] = new Rect(Point3(-1.5f, 3.999f, -1.5f), Vector3(3.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 3.0f), _n_samples);
+	_objects[6]->AddingMaterial(new Emissive(9.0f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[6]->GenerateSamples();
+
+	_lights[0] = new AreaLight(_objects[6], _objects[6]->MaterialPtr());
+
+	_bvh_ptr = new BVHAccel(_objects, _n_objects);
+
+	//_tracer_ptr = new RayTracer(this, 10);
+	_tracer_ptr = new PathTracer(this, 20);
+	//_tracer_ptr = new PathTracer(this, 65);
+	//_tracer_ptr = new BidirectionalPathTracer(this, 10, 10);

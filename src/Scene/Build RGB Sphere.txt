@@ -1,0 +1,37 @@
+	_n_objects = 5;
+	_objects = new Shape *[_n_objects];
+
+	_n_lights = 1;
+	_lights = new Light *[_n_lights];
+
+	_n_samples = 1;
+	_image = new Film(1200, 1000, 4, _n_samples);
+
+	Mat4x4 camera_trasform = RotationZ(0.0f) * RotationX(0.0f) * RotationY(PI);
+	_camera = new Pinhole(Point3(0.0f, 0.2f, 12.5f), camera_trasform, 1.0f / _image->AspectRatio());
+
+	_objects[0] = new Sphere(Point3(-0.5f, 0.0f, 0.0f), 1.0f);
+	_objects[0]->AddingMaterial(new Glossy(0.5f, 0.2f, 1000, Color(0.7f, 0.01f, 0.01f)));
+
+	_objects[1] = new Sphere(Point3(1.0f, -0.5f, 0.0f), 0.5f);
+	_objects[1]->AddingMaterial(new Glossy(0.5f, 0.2f, 1000, Color(0.2f, 0.2f, 0.7f)));
+
+	_objects[2] = new Sphere(Point3(1.0f, 0.5f, 0.0f), 0.5f);
+	_objects[2]->AddingMaterial(new Glossy(0.5f, 0.2f, 1000, Color(0.2f, 0.7f, 0.2f)));
+
+	_objects[3] = new Rect(Point3(-6.0f, -1.001f, 6.0f), Vector3(12.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -12.0f));
+	_objects[3]->AddingMaterial(new Matte(0.35f, Color(1.0f, 1.0f, 1.0f)));
+
+	_objects[4] = new Rect(Point3(-0.5f, 1.4f, 0.5f), Vector3(1.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 1.0f), _n_samples);
+	_objects[4]->AddingMaterial(new Emissive(20.0f, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[4] = new Sphere(Point3(0.0f, 1.4f, 2.3f), 0.125f, _n_samples);
+	//_objects[4]->AddingMaterial(new Emissive(580.0f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[4]->GenerateSamples();
+
+	_lights[0] = new AreaLight(_objects[4], _objects[4]->MaterialPtr());
+
+	_bvh_ptr = new BVHAccel(_objects, _n_objects);
+
+	//_tracer_ptr = new RayTracer(this, 10);
+	_tracer_ptr = new PathTracer(this, 10);
+	//_tracer_ptr = new BidirectionalPathTracer(this, 10, 10);

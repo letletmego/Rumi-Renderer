@@ -1,0 +1,32 @@
+	_n_objects = 3;
+	_objects = new Shape *[_n_objects];
+
+	_n_lights = 1;
+	_lights = new Light *[_n_lights];
+
+	_n_samples = 1;
+	_image = new Film(1200, 1000, 4, _n_samples, 1.0f / 2.2f);
+
+	Mat4x4 camera_transform = RotationZ(0.0f) * RotationX(0.0f) * RotationY(PI);
+	_camera = new Pinhole(Point3(0.0f, 0.0f, 11.2f), camera_transform, 1.0f / _image->AspectRatio());
+	_camera->DepthOfField(11.6f, 0.02f);
+
+	Mat4x4 t_transform = RotationY(0.0) * Translation(0.3f, -1.47f, -0.4f) * Scaling(1.5f, 1.5f, 1.5f);
+	_objects[0] = new Model("Scene\\Model\\bunny.obj", t_transform);
+	_objects[0]->AddingMaterial(new Matte(0.55f, Color(1.0f, 1.0f, 1.0f)));
+
+	Mat4x4 cube_transform = Translation(0.0f, -1.54f, 0.0f) * Scaling(2.0f, 0.1f, 2.0f);
+	_objects[1] = new Model("Scene\\Model\\cube.obj", cube_transform);
+	_objects[1]->AddingMaterial(new Matte(0.2f, Color(1.0f, 1.0f, 1.0f)));
+
+	_objects[2] = new Sphere(Point3(0.0f, 5.0f, 0.0f), 15.0f);
+	_objects[2]->_transform = RotationY(-PI);
+	_objects[2]->AddingMaterial(new Emissive(1.0f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[2]->AddingTexture(new HDRTexture("Scene\\HDRI\\No HDRI.hdr"));
+
+	_lights[0] = new ImageBasedLight(_objects[2], _objects[2]->MaterialPtr(), _objects[2]->TexturePtr());
+
+	_bvh_ptr = new BVHAccel(_objects, _n_objects);
+
+	//_tracer_ptr = new RayTracer(this, 10);
+	_tracer_ptr = new PathTracer(this, 15);
