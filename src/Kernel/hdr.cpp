@@ -7,7 +7,7 @@ void LoadHDR(char *file_name, float **data_buffer, int *width, int *height)
 
 	if (file_ptr == 0x00)
 	{
-		printf("File is not exist\n");
+		printf("HDRI is not exist\n");
 		system("pause");
 		exit(EXIT_FAILURE);
 	}
