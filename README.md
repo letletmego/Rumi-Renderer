@@ -5,9 +5,11 @@ A C++ Renderer
 Visual Studio 2010(or higher) Console Application Project
 
 # Reference
-https://pbrt.org                                                   
-http://graphics.stanford.edu/papers/veach_thesis/                                                   
-http://www.cs.cornell.edu/courses/cs6630/2012sp/notes/09volpath.pdf 
+https://pbrt.org
+
+http://graphics.stanford.edu/papers/veach_thesis/
+
+http://www.cs.cornell.edu/courses/cs6630/2012sp/notes/09volpath.pdf
 
 # Gallery
 ![image](https://github.com/letletmego/Rumi-Renderer/blob/master/Gallery/RGB%20Sphere.png)
