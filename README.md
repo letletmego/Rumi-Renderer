@@ -1,5 +1,5 @@
 # Rumi-Renderer
-A CPU-based single thread c++ renderer
+A CPU-based single thread c++ renderer.
 
 # Building
 Visual Studio 2010(or higher) Console Application Project
