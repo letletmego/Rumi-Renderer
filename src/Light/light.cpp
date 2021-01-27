@@ -10,11 +10,6 @@ Light::Light(void)
 {
 }
 
-void Light::GenerateSamples(void)
-{
-	return;
-}
-
 Vector3 Light::SolidAngleSampling(float *pdf_w)
 {
 	return Vector3(0.0f);

@@ -13,7 +13,6 @@ public:
 	Light(void);
 
 public:
-	virtual void GenerateSamples(void);
 	virtual Vector3 SolidAngleSampling(float *pdf_w);
 	virtual float Pdfw(const Vector3 &w);
 	virtual void Sampling(const Point3 &position, const Vector3 &normal);

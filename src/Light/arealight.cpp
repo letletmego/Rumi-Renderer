@@ -28,16 +28,6 @@ AreaLight::AreaLight(Shape *object_ptr, Material *material_ptr)
 {
 }
 
-void AreaLight::GenerateSamples(void)
-{
-	if (_object == 0x00)
-		return;
-
-	_object->GenerateSamples();
-
-	return;
-}
-
 Vector3 AreaLight::SolidAngleSampling(float *pdf_w)
 {
 	_p = _object->ShapeSampling();
@@ -84,7 +74,7 @@ float AreaLight::Pdfw(const Vector3 &w)
 
 void AreaLight::Sampling(const Point3 &position, const Vector3 &normal)
 {
-	_p  = _object->ShapeSampling();
+	_p = _object->ShapeSampling();
 
 	return;
 }

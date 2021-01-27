@@ -28,7 +28,6 @@ public:
 	AreaLight(Shape *object_ptr, Material *material_ptr);
 
 public:
-	void GenerateSamples(void);
 	Vector3 SolidAngleSampling(float *pdf_w);
 	float Pdfw(const Vector3 &w);
 	void Sampling(const Point3 &position, const Vector3 &normal);
