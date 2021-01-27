@@ -9,84 +9,94 @@ RectSample::~RectSample(void)
 
 RectSample::RectSample(void)
 	: Sampler()
-	, _xdepth(0)
-	, _ydepth(0)
+	, _depth(0)
+	, _x_length(0)
+	, _y_length(0)
 {
 }
 
 RectSample::RectSample(const int sample_count, const float x_length, const float y_length)
 	: Sampler()
-	, _xdepth(0)
-	, _ydepth(0)
+	, _depth(sample_count > 0 ? (int)sqrt((float)sample_count) : 0)
+	, _x_length(x_length)
+	, _y_length(y_length)
 {
-	int depth = sample_count > 0 ? (int)sqrt((float)sample_count) : 0;
-
-	float sampling_unit = 0.0f;
-	float difference = 0.0f;
-
-	if (x_length > y_length)
-	{
-		sampling_unit = y_length / (float)depth;
-		difference = x_length - y_length;
-	}
-	else
-	{
-		sampling_unit = x_length / (float)depth;
-		difference = y_length - x_length;
-	}
-
-	if (difference > sampling_unit)
-	{
-		float add_depth = difference / sampling_unit;
-
-		if (x_length > y_length)
-		{
-			_xdepth = depth + (int)add_depth;
-			_ydepth = depth;
-		}
-		else
-		{
-			_xdepth = depth;
-			_ydepth = depth + (int)add_depth;
-		}
-
-		_sample_count = _xdepth * _ydepth;
-	}
-	else
-	{
-		_xdepth = depth;
-		_ydepth = depth;
-		_sample_count = sample_count;
-	}
-
-	if (_sample_count > 0)
-		_sample = new Point2 [_sample_count];
 }
 
 void RectSample::GenerateSamples(void)
 {
-	if (_sample_count == 1)
-	{
-		_sample->_x = 0.5f;
-		_sample->_y = 0.5f;
+	if (_depth == 0)
 		return;
+
+	if (_sample != 0x00)
+		DELETE_ARRAY(_sample);
+
+	float ratio = 0.0f;
+	if (_x_length >= _y_length)
+		ratio = _y_length / _x_length;
+	else
+		ratio = _x_length / _y_length;
+
+	bool sampling = false;
+	float dx = 1.0f / (float)_depth;
+	float dy = 1.0f / (float)_depth;
+	int sample_idx = 0;
+	_sample_count = 0;
+	Point2 *temp_sample = new Point2 [_depth * _depth];
+
+	for (int idx_y = 0; idx_y < _depth; ++idx_y)
+	{
+		for (int idx_x = 0; idx_x < _depth; ++idx_x)
+		{
+			sample_idx = idx_y * _depth + idx_x;
+
+			(temp_sample + sample_idx)->_x = ((float)idx_x + RandomFloat()) * dx;
+			(temp_sample + sample_idx)->_y = ((float)idx_y + RandomFloat()) * dy;
+
+			if ((temp_sample + sample_idx)->_y < ratio)
+			{
+				sampling = true;
+				++_sample_count;
+			}
+		}
+			
+		if (sampling == false)
+			break;
+
+		sampling = false;
 	}
 
-	int sample_idx = 0;
-	// Map into 0 ~ 1
-	float dx = 1.0f / _xdepth;
-	float dy = 1.0f / _ydepth;
+	if (_sample_count == 0)
+		return;
 
-	for (int idx_y = 0; idx_y < _ydepth; ++idx_y)
+	_sample = new Point2 [_sample_count];
+
+	float inv_ratio = 1.0f / ratio;
+	int idx = 0;
+	int temp_idx = 0;
+	for (; idx < _sample_count; ++temp_idx)
 	{
-		for (int idx_x = 0; idx_x < _xdepth; ++idx_x)
+		if (_x_length >= _y_length)
 		{
-			sample_idx = idx_y * _xdepth + idx_x;
-
-			(_sample + sample_idx)->_x = ((float)idx_x + RandomFloat()) * dx;
-			(_sample + sample_idx)->_y = ((float)idx_y + RandomFloat()) * dy;
+			if ((temp_sample + temp_idx)->_y < ratio)
+			{
+				(_sample + idx)->_x = (temp_sample + temp_idx)->_x;
+				(_sample + idx)->_y = (temp_sample + temp_idx)->_y * inv_ratio;
+				++idx;
+			}
+		}
+		else
+		{
+			if ((temp_sample + temp_idx)->_y < ratio)
+			{
+				(_sample + idx)->_x = (temp_sample + temp_idx)->_y * inv_ratio;
+				(_sample + idx)->_y = (temp_sample + temp_idx)->_x;
+				++idx;
+			}
 		}
 	}
+
+	DELETE_ARRAY(temp_sample);
 
 	return;
 }

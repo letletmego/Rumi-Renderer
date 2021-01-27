@@ -6,8 +6,9 @@
 class RectSample : public Sampler
 {
 private:
-	int _xdepth;
-	int _ydepth;
+	int _depth;
+	float _x_length;
+	float _y_length;
 
 public:
 	~RectSample(void);
