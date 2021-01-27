@@ -76,7 +76,6 @@ Scene::~Scene(void)
 Scene::Scene(void)
 	: _n_objects(0)
 	, _n_lights(0)
-	, _n_samples(0)
 	, _image(0x00)
 	, _camera(0x00)
 	, _objects(0x00)
@@ -87,16 +86,6 @@ Scene::Scene(void)
 	, _tracer_ptr(0x00)
 {
 	srand((unsigned int)time(0x00));
-}
-
-void Scene::LightsGenerateSamples(void)
-{
-	for (int idx = 0; idx < _n_lights; ++idx)
-	{
-		(*_lights + idx)->GenerateSamples();
-	}
-
-	return;
 }
 
 void Scene::LightsUniformSampling(Light **light_ptr, float *lights_sampling_pdf) const
@@ -151,8 +140,9 @@ void Scene::Build(void)
 	_n_lights = 1;
 	_lights = new Light *[_n_lights];
 
-	_n_samples = 1;
-	_image = new Film(1200, 1000, 4, _n_samples, 1.0f);
+	int n_samples = 1;
+	_image = new Film(1200, 1000, 4, n_samples, 2.2f);
+	_image->PixelSampler()->GenerateSamples();
 
 	//Mat4x4 camera_transform = RotationZ(PI * 0.05f) * RotationX(-PI * 0.15f) * RotationY(-PI * 0.86f);
 	//_camera = new Pinhole(Point3(5.0f, 5.5f, 10.5f), camera_transform, 1.0f / _image->AspectRatio());
@@ -161,20 +151,21 @@ void Scene::Build(void)
 	//_camera->DepthOfField(23.2f, 0.5f);
 
 	_objects[0] = new Rect(Point3(-3.0f, -1.0f, 3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -6.0f));
-	_objects[0]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
-	//_objects[0]->AddingTexture(new Checker(12.0f, 12.0f, Color(0.85f, 0.85f, 0.85f), Color(1.0f, 1.0f, 1.0f)));
+	_objects[0]->AddingMaterial(new Matte(0.7f, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[0]->AddingMaterial(new Glossy(0.5f, 0.2f, 7500, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[0]->AddingTexture(new Checker(12.0f, 12.0f, Color(0.7f, 0.7f, 0.7f), Color(1.0f, 1.0f, 1.0f)));
 
 	_objects[1] = new Rect(Point3(3.0f, -1.0f, -3.0f), Vector3(0.0f, 0.0f, 6.0f), Vector3(0.0f, 5.0f, 0.0f));
-	_objects[1]->AddingMaterial(new Matte(0.75f, Color(0.1f, 0.9f, 0.1f)));
+	_objects[1]->AddingMaterial(new Matte(0.67f, Color(0.01f, 0.9f, 0.01f)));
 	_objects[2] = new Rect(Point3(-3.0f, -1.0f, 3.0f), Vector3(0.0f, 0.0f, -6.0f), Vector3(0.0f, 5.0f, 0.0f));
-	_objects[2]->AddingMaterial(new Matte(0.75f, Color(0.9f, 0.1f, 0.1f)));
+	_objects[2]->AddingMaterial(new Matte(0.67f, Color(0.9f, 0.01f, 0.01f)));
 	_objects[3] = new Rect(Point3(-3.0f, 4.0f, -3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 6.0f));
-	_objects[3]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[3]->AddingMaterial(new Matte(0.7f, Color(1.0f, 1.0f, 1.0f)));
 	_objects[4] = new Rect(Point3(-3.0f, -1.0f, -3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 5.0f, 0.0f));
-	_objects[4]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[4]->AddingMaterial(new Matte(0.7f, Color(1.0f, 1.0f, 1.0f)));
 
 	_objects[5] = new Sphere(Point3(-1.5f, 0.0f, -1.5f), 1.0f);
-	_objects[5]->AddingMaterial(new Specular(0.95f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[5]->AddingMaterial(new Specular(0.9f, Color(1.0f, 1.0f, 1.0f)));
 	//_objects[5]->AddingMaterial(new Matte(0.7f, Color(1.0f, 1.0f, 1.0f)));
 	//_objects[5]->_transform = RotationY(-PI / 2.0f);
 	//_objects[5]->AddingTexture(new ImageTexture("Scene\\Texture\\earth.bmp"));
@@ -192,16 +183,16 @@ void Scene::Build(void)
 	//_objects[6] = new Model("Scene\\Model\\cube.obj", cube_transform);
 	//_objects[6]->AddingMaterial(new Dielectric(1.5f, 1.00029f, Color(0.001f, 0.001f, 0.001f)));
 
-	//_objects[7] = new Rect(Point3(-1.0f, 3.5f, 1.0f), Vector3(2.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -2.0f), _n_samples);
-	_objects[7] = new Rect(Point3(-1.0f, 3.9f, -1.0f), Vector3(2.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 2.0f), _n_samples);
-	_objects[7]->AddingMaterial(new Emissive(18.0f, Color(1.0f, 1.0f, 1.0f)));
-	//_objects[7] = new Sphere(Point3(0.0f, 3.7f, 0.0f), 0.25f, 1024);
-	//_objects[7]->AddingMaterial(new Emissive(125.0f, Color(1.0f, 1.0f, 1.0f));
+	//_objects[7] = new Rect(Point3(-1.0f, 3.5f, 1.0f), Vector3(2.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -2.0f), 256);
+	_objects[7] = new Rect(Point3(-1.0f, 3.9f, -1.0f), Vector3(2.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 2.0f), 256);
+	_objects[7]->AddingMaterial(new Emissive(15.0f, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[7] = new Rect(Point3(-3.0f, 3.999f, -3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 6.0f), 4096);
+	//_objects[7]->AddingMaterial(new Emissive(1.6666f, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[7] = new Sphere(Point3(0.0f, 3.7f, 0.0f), 0.25f, 4096);
+	//_objects[7]->AddingMaterial(new Emissive(90.0f, Color(1.0f, 1.0f, 1.0f)));
 	_objects[7]->GenerateSamples();
 
 	_lights[0] = new AreaLight(_objects[7], _objects[7]->MaterialPtr());
-
-	//_volume_ptr = new HomogeneousVolume(BBox(Point3(-3.0f, -1.0f, -3.0f), Point3(3.0f, 4.0f, 3.0f)), 0.0018f, 0.0f);
 
 	_bvh_ptr = new BVHAccel(_objects, _n_objects);
 
@@ -221,22 +212,15 @@ void Scene::Rendering(float *time_lapse)
 	int height = _image->Height();
 	int width  = _image->Width();
 	int n_samples = _image->PixelSampler()->SampleCount();
-	float inv_n_sample = 1.0f / (float)n_samples;
-	float aspect_ratio = _image->AspectRatio();
-
-	//  Generate pixel sample
-	_image->PixelSampler()->GenerateSamples();
 
 	clock_t t = clock();
-	float path_sampling = 0.0f;
+
 	//  Height of image
 	for (int height_idx = 0; height_idx < height; ++height_idx)
 	{
 		//  Width of image
 		for (int width_idx = 0; width_idx < width; ++width_idx)
 		{
-			LightsGenerateSamples();
-
 			//  Anti-Aliasing
 			for (int sampling_idx = 0; sampling_idx < n_samples; ++sampling_idx)
 			{
@@ -254,7 +238,6 @@ void Scene::Rendering(float *time_lapse)
 				}
 			}
 
-			Lo *= inv_n_sample;
 			_image->Pixel(width_idx, height_idx, Lo);
 
 			Lo._r = 0.0f;
@@ -268,6 +251,7 @@ void Scene::Rendering(float *time_lapse)
 	t = clock() - t;
 	*time_lapse = (float)t * 1e-3f;
 
+	_image->OutputBuffer();
 	_image->Save(*time_lapse);
 
 	return;

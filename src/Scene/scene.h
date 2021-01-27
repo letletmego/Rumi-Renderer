@@ -18,7 +18,6 @@ class Scene
 private:
 	int _n_objects;
 	int _n_lights;
-	int _n_samples;
 
 public:
 	// Output image
@@ -43,7 +42,6 @@ public:
 	Scene(void);
 
 public:
-	void LightsGenerateSamples(void);
 	void LightsUniformSampling(Light **light_ptr, float *lights_sampling_pdf) const;
 	bool VisibilityTest(const Point3 &position, const Vector3 &normal, Light **light_ptr, float *lights_sampling_pdf, Vector3 *wi, Ray *shadow_ray) const;
 
