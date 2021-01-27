@@ -12,6 +12,8 @@ private:
 	Sampler *_pixel_sampler;
 	// Output of rendering
 	unsigned char *_buffer;
+	// buffer of ray tracing
+	float *_pixel_buffer;
 	// buffer of light tracing
 	float *_light_buffer;
 	// Width of film
@@ -26,6 +28,7 @@ private:
 	float _aspect_ratio;
 	// Gamma
 	float _gamma;
+	float _gamma_correction;
 
 public:
 	~Film(void);
@@ -41,6 +44,7 @@ public:
 	void Pixel(const int &width_idx, const int &height_idx, const Color& rgb);
 	void LightPixel(const int &width_idx, const int &height_idx, const Color& rgb);
 	void CombineBuffer(void);
+	void OutputBuffer(void);
 	void Save(const float time_lapse);
 };
 

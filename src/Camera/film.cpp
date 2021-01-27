@@ -8,12 +8,14 @@
 Film::~Film(void)
 {
 	FREE(_light_buffer)
+	FREE(_pixel_buffer)
 	FREE(_buffer)
 	DELETE(_pixel_sampler)
 }
 
 Film::Film(void)
 	: _buffer(0x00)
+	, _pixel_buffer(0x00)
 	, _light_buffer(0x00)
 	, _width(0)
 	, _height(0)
@@ -26,7 +28,8 @@ Film::Film(void)
 }
 
 Film::Film(const unsigned int width, const unsigned int height, const unsigned int byte_per_pixel, const unsigned int n_samples, float gamma)
-    : _buffer(0x00)
+	: _buffer(0x00)
+	, _pixel_buffer(0x00)
 	, _light_buffer(0x00)
 	, _width(width)
 	, _height(height)
@@ -35,6 +38,7 @@ Film::Film(const unsigned int width, const unsigned int height, const unsigned i
 	, _aspect_ratio((float)width / (float)height)
 	, _pixel_sampler(0x00)
 	, _gamma(gamma)
+	, _gamma_correction(1.0f / gamma)
 {
 	if (n_samples > 0)
 		_sampling_depth = (int)sqrt((float)n_samples);
@@ -46,6 +50,9 @@ Film::Film(const unsigned int width, const unsigned int height, const unsigned i
 	{
 		_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _width * _height * _byte_per_pixel);
 		memset(_buffer, 0, _byte_per_pixel * _width * _height);
+
+		_pixel_buffer = (float *)malloc(sizeof(float) * _width * _height * 3);
+		memset(_pixel_buffer, 0, _width * _height * 3);
 	}
 }
 
@@ -82,43 +89,16 @@ int Film::Height(void) const
 
 void Film::Pixel(const int &width_idx, const int &height_idx, const Color &rgb)
 {
-	// Index of pixel
-	int pixel_h = (_height - (height_idx + 1)) * _width * _byte_per_pixel;
-	int pixel_w = width_idx * _byte_per_pixel;
-	int pixel_idx = pixel_h + pixel_w;
-
-	// Average of anti-aliasing
 	Color pixel(rgb);
-	pixel._r = powf(pixel._r, _gamma) * 255.0f;
-	pixel._g = powf(pixel._g, _gamma) * 255.0f;
-	pixel._b = powf(pixel._b, _gamma) * 255.0f;
-
-	// Color 0~255 clamp
-	pixel._r = pixel._r > 255.0f ? 255.0f : pixel._r < 0.0f ? 0.0f : pixel._r;
-	pixel._g = pixel._g > 255.0f ? 255.0f : pixel._g < 0.0f ? 0.0f : pixel._g;
-	pixel._b = pixel._b > 255.0f ? 255.0f : pixel._b < 0.0f ? 0.0f : pixel._b;
-
-	// Result
-	unsigned char *pixel_ptr = (_buffer + pixel_idx);
-	float value = (float)*pixel_ptr + pixel._b;
-	if (value > 255.0f)
-		*pixel_ptr = 255;
-	else
-		*pixel_ptr = (int)value;
-
-	pixel_ptr = (_buffer + ++pixel_idx);
-	value = (float)*pixel_ptr + pixel._g;
-	if (value > 255.0f)
-		*pixel_ptr = 255;
-	else
-		*pixel_ptr = (int)value;
-
-	pixel_ptr = (_buffer + ++pixel_idx);
-	value = (float)*pixel_ptr + pixel._r;
-	if (value > 255.0f)
-		*pixel_ptr = 255;
-	else
-		*pixel_ptr = (int)value;
+	// Index of pixel
+	int pixel_h = (_height - (height_idx + 1)) * _width * 3;
+	int pixel_w = width_idx * 3;
+	int pixel_idx = pixel_h + pixel_w;
+	float *pixel_ptr = (_pixel_buffer + pixel_idx);
+	
+	*(pixel_ptr + 0) += pixel._b;
+	*(pixel_ptr + 1) += pixel._g;
+	*(pixel_ptr + 2) += pixel._r;
 
 	return;
 }
@@ -153,8 +133,6 @@ void Film::CombineBuffer(void)
 		return;
 
 	Color light;
-	float inv_n_sampling = 1.0f / (float)(_sampling_depth * _sampling_depth);
-	float inv_count = 1.0f;
 	int light_hidx;
 	int light_widx;
 	int light_idx;
@@ -170,9 +148,47 @@ void Film::CombineBuffer(void)
 			light._b = *(_light_buffer + light_idx);
 			light._g = *(_light_buffer + ++light_idx);
 			light._r = *(_light_buffer + ++light_idx);
-			light *= inv_n_sampling;
 			
 			Pixel(w_idx, h_idx, light);
+		}
+	}
+
+	return;
+}
+
+void Film::OutputBuffer(void)
+{
+	Color pixel;
+	float inv_n_sampling = 1.0f / (float)(_sampling_depth * _sampling_depth);
+
+	for (int h_idx = 0; h_idx < _height; ++h_idx)
+	{
+		for (int w_idx = 0; w_idx < _width; ++w_idx)
+		{
+			int output_h = (_height - (h_idx + 1)) * _width * _byte_per_pixel;
+			int output_w = w_idx * _byte_per_pixel;
+			int output_idx = output_h + output_w;
+
+			int pixel_h = (_height - (h_idx + 1)) * _width * 3;
+			int pixel_w = w_idx * 3;
+			int pixel_idx = pixel_h + pixel_w;
+
+			pixel._b = *(_pixel_buffer + pixel_idx) * inv_n_sampling;
+			pixel._g = *(_pixel_buffer + pixel_idx + 1) * inv_n_sampling;
+			pixel._r = *(_pixel_buffer + pixel_idx + 2) * inv_n_sampling;
+
+			pixel._r = powf(pixel._r, _gamma_correction) * 255.5f;
+			pixel._g = powf(pixel._g, _gamma_correction) * 255.5f;
+			pixel._b = powf(pixel._b, _gamma_correction) * 255.5f;
+
+			// Color 0~255 clamp
+			pixel._r = pixel._r > 255.0f ? 255.0f : pixel._r < 0.0f ? 0.0f : pixel._r;
+			pixel._g = pixel._g > 255.0f ? 255.0f : pixel._g < 0.0f ? 0.0f : pixel._g;
+			pixel._b = pixel._b > 255.0f ? 255.0f : pixel._b < 0.0f ? 0.0f : pixel._b;
+
+			*(_buffer + output_idx) = (unsigned int)pixel._b;
+			*(_buffer + output_idx + 1) = (unsigned int)pixel._g;
+			*(_buffer + output_idx + 2) = (unsigned int)pixel._r;
 		}
 	}
 
