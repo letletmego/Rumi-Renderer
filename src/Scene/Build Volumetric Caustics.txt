@@ -4,34 +4,34 @@
 	_n_lights = 1;
 	_lights = new Light *[_n_lights];
 
-	_n_samples = 1;
-	//_image = new Film(640, 640, 4, _n_samples);
-	_image = new Film(1280, 1280, 4, _n_samples);
+	int n_samples = 1;
+	//_image = new Film(640, 640, 4, _n_samples, 2.2f);
+	_image = new Film(1280, 1280, 4, n_samples, 2.2f);
 
 	Mat4x4 camera_transform = RotationZ(0.0f) * RotationX(0.0f) * RotationY(PI);
 	_camera = new Pinhole(Point3(0.0f, 1.0f, 20.1f), camera_transform, 1.0f / _image->AspectRatio());
 
 	_objects[0] = new Rect(Point3(-3.0f, -2.0f, 3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, -6.0f));
-	_objects[0]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[0]->AddingMaterial(new Matte(0.7f, Color(1.0f, 1.0f, 1.0f)));
 	_objects[1] = new Rect(Point3(3.0f, -2.0f, -3.0f), Vector3(0.0f, 0.0f, 6.0f), Vector3(0.0f, 6.0f, 0.0f));
-	_objects[1]->AddingMaterial(new Matte(0.75f, Color(0.1f, 0.9f, 0.1f)));
+	_objects[1]->AddingMaterial(new Matte(0.67f, Color(0.01f, 0.9f, 0.01f)));
 	_objects[2] = new Rect(Point3(-3.0f, -2.0f, 3.0f), Vector3(0.0f, 0.0f, -6.0f), Vector3(0.0f, 6.0f, 0.0f));
-	_objects[2]->AddingMaterial(new Matte(0.75f, Color(0.9f, 0.1f, 0.1f)));
+	_objects[2]->AddingMaterial(new Matte(0.67f, Color(0.9f, 0.01f, 0.01f)));
 	_objects[3] = new Rect(Point3(-3.0f, 4.0f, -3.0f), Vector3(6.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 6.0f));
-	_objects[3]->AddingMaterial(new Matte(0.75f, Color(1.0f, 1.0f, 1.0f)));
+	_objects[3]->AddingMaterial(new Matte(0.7f, Color(1.0f, 1.0f, 1.0f)));
 	
 	_objects[4] = new Sphere(Point3(0.971f, 1.45f, 0.55f), 1.0f);
-	_objects[4]->AddingMaterial(new Dielectric(1.5f, 1.00029f, Color(0.01f, 0.01f, 0.01f)));
+	_objects[4]->AddingMaterial(new Dielectric(1.55f, 1.00029f, Color(0.01f, 0.01f, 0.01f)));
 
-	//_objects[5] = new Rect(Point3(-1.0f, 3.9f, -1.0f), Vector3(2.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 2.0f), _n_samples);
+	_objects[5] = new Rect(Point3(-0.015625f, 3.85f, -0.015625f), Vector3(0.03125f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.03125f), 256);
+	_objects[5]->AddingMaterial(new Emissive(61440, Color(1.0f, 1.0f, 1.0f)));
+	//_objects[5] = new Rect(Point3(-1.0f, 3.9f, -1.0f), Vector3(2.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 2.0f), 256);
 	//_objects[5]->AddingMaterial(new Emissive(20.0f, Color(1.0f, 1.0f, 1.0f)));
-	_objects[5] = new Rect(Point3(-0.015625f, 3.85f, -0.015625f), Vector3(0.03125f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.03125f), _n_samples);
-	_objects[5]->AddingMaterial(new Emissive(81920, Color(1.0f, 1.0f, 1.0f)));
 	_objects[5]->GenerateSamples();
 
 	_lights[0] = new AreaLight(_objects[5], _objects[5]->MaterialPtr());
 
-	_volume_ptr = new HomogeneousVolume(BBox(Point3(-3.0f, -2.0f, -3.0f), Point3(3.0f, 4.0f, 3.0f)), 0.12f, 0.05f);
+	_volume_ptr = new HomogeneousVolume(BBox(Point3(-3.0f, -2.0f, -3.0f), Point3(3.0f, 4.0f, 3.0f)), 0.12f, 0.08f);
 	//_volume_ptr = new HomogeneousVolume(BBox(Point3(-1.0f, -1.0f, -1.0f), Point3(2.0f, 0.0f, 1.0f)), 0.12f, 0.12f);
 	//_volume_ptr = new HomogeneousVolume(BBox(Point3(-3.0f, -2.0f, -3.0f), Point3(3.0f, 4.0f, 3.0f)), Color(0.12f, 0.12f, 0.12f), Color(0.04f, 0.04f, 0.07f));
 
