@@ -1541,7 +1541,7 @@ float BidirectionalPathTracer::MISWeight(Pinhole *camera_ptr, Light *light_ptr,
 
 	float sum_pi = 1.0f;
 	float pi = 1.0f;
-	for (int idx = nt - 1; idx > 0; --idx)
+	for (int idx = nt - 1; idx >= 0; --idx)
 	{
 		pi *= Average(*(_t_pdfbackward + idx) / *(_t_pdfforward + idx));
 
@@ -1554,11 +1554,11 @@ float BidirectionalPathTracer::MISWeight(Pinhole *camera_ptr, Light *light_ptr,
 		if (idx == 0 && _t_path->_start._isdirac == true)
 			continue;
 
-		sum_pi += pi * pi;
+		sum_pi += pi;
 	}
 
 	pi = 1.0f;
-	for (int idx = ns - 1; idx > 0; --idx)
+	for (int idx = ns - 1; idx >= 0; --idx)
 	{
 		pi *= Average(*(_s_pdfbackward + idx) / *(_s_pdfforward + idx));
 
@@ -1568,7 +1568,7 @@ float BidirectionalPathTracer::MISWeight(Pinhole *camera_ptr, Light *light_ptr,
 		if (idx == 0 && _s_path->_start._isdirac == true)
 			continue;
 
-		sum_pi += pi * pi;
+		sum_pi += pi;
 	}
 
 	if (ns > 0)
