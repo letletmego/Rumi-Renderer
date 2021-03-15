@@ -9,12 +9,11 @@ Film::~Film(void)
 {
 	FREE(_light_buffer)
 	FREE(_pixel_buffer)
-	FREE(_buffer)
 	DELETE(_pixel_sampler)
 }
 
 Film::Film(void)
-	: _buffer(0x00)
+	: _pixel_sampler(0x00)
 	, _pixel_buffer(0x00)
 	, _light_buffer(0x00)
 	, _width(0)
@@ -22,13 +21,12 @@ Film::Film(void)
 	, _byte_per_pixel(0)
 	, _sampling_depth(0)
 	, _aspect_ratio(0.0f)
-	, _pixel_sampler(0x00)
 	, _gamma(1.0f)
 {
 }
 
 Film::Film(const unsigned int width, const unsigned int height, const unsigned int byte_per_pixel, const unsigned int n_samples, float gamma)
-	: _buffer(0x00)
+	: _pixel_sampler(0x00)
 	, _pixel_buffer(0x00)
 	, _light_buffer(0x00)
 	, _width(width)
@@ -36,23 +34,18 @@ Film::Film(const unsigned int width, const unsigned int height, const unsigned i
 	, _byte_per_pixel(byte_per_pixel)
 	, _sampling_depth(0)
 	, _aspect_ratio((float)width / (float)height)
-	, _pixel_sampler(0x00)
 	, _gamma(gamma)
-	, _gamma_correction(1.0f / gamma)
 {
 	if (n_samples > 0)
+	{
 		_sampling_depth = (int)sqrt((float)n_samples);
-
-	if (n_samples > 0)
 		_pixel_sampler = new UniformSample(n_samples, n_samples > 1);
+	}
 
 	if (_width > 0 && _height > 0 && _byte_per_pixel > 0)
 	{
-		_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _width * _height * _byte_per_pixel);
-		memset(_buffer, 0, _byte_per_pixel * _width * _height);
-
 		_pixel_buffer = (float *)malloc(sizeof(float) * _width * _height * 3);
-		memset(_pixel_buffer, 0, _width * _height * 3);
+		memset(_pixel_buffer, 0, sizeof(float) * _width * _height * 3);
 	}
 }
 
@@ -62,7 +55,7 @@ void Film::AddLightBuffer(void)
 		return;
 
 	_light_buffer = (float *)malloc(sizeof(float) * _width * _height * 3);
-	memset(_light_buffer, 0, sizeof(float) * 3 * _width * _height);
+	memset(_light_buffer, 0, sizeof(float) * _width * _height * 3);
 
 	return;
 }
@@ -91,7 +84,7 @@ void Film::Pixel(const int &width_idx, const int &height_idx, const Color &rgb)
 {
 	Color pixel(rgb);
 	// Index of pixel
-	int pixel_h = (_height - (height_idx + 1)) * _width * 3;
+	int pixel_h = height_idx * _width * 3;
 	int pixel_w = width_idx * 3;
 	int pixel_idx = pixel_h + pixel_w;
 	float *pixel_ptr = (_pixel_buffer + pixel_idx);
@@ -156,52 +149,55 @@ void Film::CombineBuffer(void)
 	return;
 }
 
-void Film::OutputBuffer(void)
+void Film::Save(const float time_lapse)
 {
+	if (_width == 0 || _height == 0 || _byte_per_pixel == 0)
+		return;
+
+	char file_name[64];
+	sprintf(file_name, "%.3fs.bmp", time_lapse);
+
+	unsigned char *buffer = (unsigned char *)malloc(sizeof(unsigned char) * _width * _height * _byte_per_pixel);
+	memset(buffer, 0, _byte_per_pixel * _width * _height);
+
 	Color pixel;
+	float gamma_correction = 1.0f / _gamma;
 	float inv_n_sampling = 1.0f / (float)(_sampling_depth * _sampling_depth);
 
 	for (int h_idx = 0; h_idx < _height; ++h_idx)
 	{
 		for (int w_idx = 0; w_idx < _width; ++w_idx)
 		{
-			int output_h = (_height - (h_idx + 1)) * _width * _byte_per_pixel;
+			int output_h = h_idx * _width * _byte_per_pixel;
 			int output_w = w_idx * _byte_per_pixel;
 			int output_idx = output_h + output_w;
 
-			int pixel_h = (_height - (h_idx + 1)) * _width * 3;
+			int pixel_h = h_idx * _width * 3;
 			int pixel_w = w_idx * 3;
 			int pixel_idx = pixel_h + pixel_w;
 
 			pixel._b = *(_pixel_buffer + pixel_idx) * inv_n_sampling;
 			pixel._g = *(_pixel_buffer + pixel_idx + 1) * inv_n_sampling;
 			pixel._r = *(_pixel_buffer + pixel_idx + 2) * inv_n_sampling;
-
-			pixel._r = powf(pixel._r, _gamma_correction) * 255.5f;
-			pixel._g = powf(pixel._g, _gamma_correction) * 255.5f;
-			pixel._b = powf(pixel._b, _gamma_correction) * 255.5f;
+			
+			pixel._b = powf(pixel._b, gamma_correction) * 255.0f;
+			pixel._g = powf(pixel._g, gamma_correction) * 255.0f;
+			pixel._r = powf(pixel._r, gamma_correction) * 255.0f;
 
 			// Color 0~255 clamp
-			pixel._r = pixel._r > 255.0f ? 255.0f : pixel._r < 0.0f ? 0.0f : pixel._r;
-			pixel._g = pixel._g > 255.0f ? 255.0f : pixel._g < 0.0f ? 0.0f : pixel._g;
 			pixel._b = pixel._b > 255.0f ? 255.0f : pixel._b < 0.0f ? 0.0f : pixel._b;
-
-			*(_buffer + output_idx) = (unsigned int)pixel._b;
-			*(_buffer + output_idx + 1) = (unsigned int)pixel._g;
-			*(_buffer + output_idx + 2) = (unsigned int)pixel._r;
+			pixel._g = pixel._g > 255.0f ? 255.0f : pixel._g < 0.0f ? 0.0f : pixel._g;
+			pixel._r = pixel._r > 255.0f ? 255.0f : pixel._r < 0.0f ? 0.0f : pixel._r;
+			
+			*(buffer + output_idx) = (unsigned int)pixel._b;
+			*(buffer + output_idx + 1) = (unsigned int)pixel._g;
+			*(buffer + output_idx + 2) = (unsigned int)pixel._r;
 		}
 	}
 
-	return;
-}
+	SaveBmp(buffer, file_name, _width, _height, _byte_per_pixel);
 
-void Film::Save(const float time_lapse)
-{
-	char file_name[64];
-
-	sprintf(file_name, "%.3fs.bmp", time_lapse);
-
-	SaveBmp(_buffer, file_name, _width, _height, _byte_per_pixel);
+	FREE(buffer);
 
 	return;
 }
