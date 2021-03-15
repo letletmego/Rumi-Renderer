@@ -108,7 +108,7 @@ void Model::LoadObjectFile(const char *file)
 
 	_n_triangles = f_count / 3;
 	_triangles = new Triangle *[_n_triangles];
-	printf("Model Triangle Count : %d\n", _n_triangles);
+	printf("Model : %d Triangles.\n", _n_triangles);
 
 	Point3 *v = 0x00;
 	int *v_idx_list = 0x00;
@@ -141,9 +141,11 @@ void Model::LoadObjectFile(const char *file)
 	int vt_idx = 0;
 	int vn_idx = 0;
 	int f_idx  = 0;
-	float min_y = FLT_MAX;
-
 	char data_type[4] = { 0x00 };
+
+	Point3 vertex;
+	Point2 uv;
+	Vector3 normal;
 
 	while (true)
 	{
@@ -162,18 +164,15 @@ void Model::LoadObjectFile(const char *file)
 
 		if (strcmp("v ", data_type) == 0)
 		{
-			Point3 vertex;
+			vertex = 0.0f;
 			fscanf(file_ptr, "%f %f %f", &vertex._x, &vertex._y, &vertex._z);
 			v[v_idx] = vertex;
 			++v_idx;
-			
-			if (v[v_idx]._y < min_y)
-				min_y = v[v_idx]._y;
 		}
 
 		if (strcmp("vt ", data_type) == 0)
 		{
-			Point2 uv;
+			uv = 0.0f;
 			fscanf(file_ptr, "%f %f", &uv._x, &uv._y);
 			vt[vt_idx] = uv;
 			++vt_idx;
@@ -181,7 +180,7 @@ void Model::LoadObjectFile(const char *file)
 
 		if (strcmp("vn ", data_type) == 0)
 		{
-			Vector3 normal;
+			normal = 0.0f;
 			fscanf(file_ptr, "%f %f %f", &normal._x, &normal._y, &normal._z);
 			vn[vn_idx] = normal;
 			++vn_idx;
@@ -195,6 +194,7 @@ void Model::LoadObjectFile(const char *file)
 			int idx_vn[3] = { 0, 0, 0 };
 
 			char check_word;
+			bool negative = false;
 			int data_idx = 0;
 			float data[3] = { 0.0f, 0.0f, 0.0f };
 			float scalar = 10.0f;
@@ -203,35 +203,41 @@ void Model::LoadObjectFile(const char *file)
 			{
 				switch (buffer[idx])
 				{
-					case '0':
-					case '1':
-					case '2':
-					case '3':
-					case '4':
-					case '5':
-					case '6':
-					case '7':
-					case '8':
-					case '9':
+					case '-':
+						negative = true;
+						break;
+
+					case '0': case '1': case '2': case '3': case '4':
+					case '5': case '6': case '7': case '8': case '9':
 						data[data_idx] = data[data_idx] * scalar + (buffer[idx] - 0x30);
 						break;
 
 					case '/':
 						++data_idx;
+						negative = false;
 						break;
 
-					case ' ' :
-					case '\n':
-					case '\0':
-						idx_v[input_idx]  = data[0] - 1;
-						idx_vt[input_idx] = data[1] - 1;
-						idx_vn[input_idx] = data[2] - 1;
+					case ' ' : case '\n': case '\0':
+						if (negative == false)
+						{
+							idx_v[input_idx]  = data[0] - 1;
+							idx_vt[input_idx] = data[1] - 1;
+							idx_vn[input_idx] = data[2] - 1;
+						}
+						else
+						{
+							idx_v[input_idx]  = -data[0] + v_count;
+							idx_vt[input_idx] = -data[1] + vt_count;
+							idx_vn[input_idx] = -data[2] + vn_count;
+						}
+
 						++input_idx;
 
 						data_idx = 0;
 						data[0] = 0.0f;
 						data[1] = 0.0f;
 						data[2] = 0.0f;
+						negative = false;
 						break;
 
 					default:
@@ -274,12 +280,20 @@ void Model::LoadObjectFile(const char *file)
 	Vector3 n1;
 	Vector3 n2;
 	int tri_idx = 0;
+	float min_y = FLT_MAX;
 
 	for (int f_idx = 0; f_idx < f_count; ++++++f_idx)
 	{
 		v0 = *(v + *(v_idx_list + f_idx + 0));
 		v1 = *(v + *(v_idx_list + f_idx + 1));
 		v2 = *(v + *(v_idx_list + f_idx + 2));
+
+		if (v0._y < min_y)
+			min_y = v0._y;
+		if (v1._y < min_y)
+			min_y = v1._y;
+		if (v2._y < min_y)
+			min_y = v2._y;
 
 		v0 = _transform * v0;
 		v1 = _transform * v1;
@@ -292,6 +306,13 @@ void Model::LoadObjectFile(const char *file)
 			n0 = *(vn + *(vn_idx_list + f_idx + 0));
 			n1 = *(vn + *(vn_idx_list + f_idx + 1));
 			n2 = *(vn + *(vn_idx_list + f_idx + 2));
+
+			if (n0 == Vector3())
+				n0 = Normalize(Cross(v1 - v0, v2 - v0));
+			if (n1 == Vector3())
+				n1 = Normalize(Cross(v1 - v0, v2 - v0));
+			if (n2 == Vector3())
+				n2 = Normalize(Cross(v1 - v0, v2 - v0));
 
 			n0 = Normalize(_transform_inv * n0);
 			n1 = Normalize(_transform_inv * n1);
@@ -307,15 +328,15 @@ void Model::LoadObjectFile(const char *file)
 		++tri_idx;
 	}
 
-	free(vn_idx_list); vn_idx_list = 0x00;
-	free(vt_idx_list); vt_idx_list = 0x00;
-	free(v_idx_list);  v_idx_list  = 0x00;
-
-	if (vn) delete [] vn;
-	if (vt) delete [] vt;
-	if (v)  delete [] v;
+	FREE(vn_idx_list);
+	FREE(vt_idx_list);
+	FREE(v_idx_list);
+	DELETE_ARRAY(vn);
+	DELETE_ARRAY(vt);
+	DELETE_ARRAY(v);
 
 	fclose(file_ptr);
+
 	printf("Loading Model Success.\n\n");
 
 	return;
@@ -323,7 +344,11 @@ void Model::LoadObjectFile(const char *file)
 
 void Model::BuildAccel(void)
 {
+	printf("Build Model Bounding Volume Hierarchy.\n");
+
 	_bvh_ptr = new BVHAccel((Shape **)_triangles, _n_triangles);
+
+	printf("Build Model Bounding Volume Hierarchy Successfully.\n\n");
 
 	return;
 }
